@@ -1,7 +1,11 @@
 import { Controller, Get, Param, Post, Body, Patch } from '@nestjs/common';
 import { AppService } from './app.service';
+import type { Data } from './interfaces/Data.interface';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
-@Controller()
+
+@Controller('app')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
@@ -10,17 +14,18 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get(('/article/:id'))
+  @Get((':id'))
   getId(@Param('id') id: string): string {
     return this.appService.getId(id);
   }
 
   @Post()
-  getUserData(@Body() data: any): string {
+  getUserData(@Body() data: Data): string {
     return this.appService.getUserData(data);
   }
+
   @Patch(':id')
-  getId2(@Param('id') id: string, @Body() data: object): string {
+  getuserDataWithId(@Param('id') id: string, @Body() data: Data): string {
     return this.appService.getId2(id, data);
   }
   
