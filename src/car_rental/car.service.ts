@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, Repository,  Between, MoreThanOrEqual, LessThanOrEqual} from 'typeorm';
 import { Cars } from 'src/entities/car.entity';
 import type { Car } from 'src/interfaces/Car.interface';
 
@@ -18,19 +18,19 @@ export class CarService {
   findCarById(id: number): Promise<Car | null> {
     return this.carRespository.findOne({ where: { id } });
   }
-  async searchCars(carData: Car): Promise<object | string>{
-    const where: FindOptionsWhere<Car> = {};
+  async searchCars(carData: Partial<Car>): Promise<Car[] | string> {
+    const where: FindOptionsWhere<Cars> = {};
 
-    carData.brand 
-      ? where.brand = ILike(`%${carData.brand}%`) : null;
-    carData.model 
-      ? where.model = ILike(`%${carData.model}%`) : null;
-    carData.price 
-        ? where.price = carData.price : null;
+    if (carData.brand) where.brand = ILike(`%${carData.brand}%`);
+    if (carData.model) where.model = ILike(`%${carData.model}%`);
+    carData.minPrice ? (where.price = MoreThanOrEqual(carData.minPrice)) : null;
+    carData.maxPrice ? (where.price = LessThanOrEqual(carData.maxPrice)) : null;
+    if (carData.minPrice && carData.maxPrice) {
+      where.price = Between(carData.minPrice, carData.maxPrice);
+    }
 
     const cars = await this.carRespository.find({ where });
-    return cars.length 
-      ? cars : 'Brak Wyników';
+    return cars.length ? cars : 'Brak wyników';
   }
   findByBrand(brand: string): Promise<Car[]> {
     return this.carRespository.find({ where: { brand } });
