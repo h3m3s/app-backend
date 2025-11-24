@@ -1,23 +1,47 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Delete, BadRequestException, Post, Body, Put, Patch, Search } from '@nestjs/common';
 import { CarService } from './car.service';
-import { Cars } from 'src/entities/car.entity';
-import { Car } from 'src/interfaces/Car.interface';
+import type { Car } from 'src/interfaces/Car.interface';
 
 @Controller('car')
 export class CarController {
   constructor(private readonly carService: CarService) {}
 
   @Get()
-  findAllCars(): Promise<Cars[]>{
+  findAllCars(): Promise<Car[]>{
     return this.carService.findAll();
   }
 
   @Get('/id/:id')
-  findCarById(@Param('id') id: number): Promise<Cars | null> {
+  findCarById(@Param('id') id: number): Promise<Car | null> {
    return this.carService.findCarById(id);
   }
-  @Get('/brand/:brand')
-  findByBrand(@Param('brand') brand: string): Promise<Cars[]> {
-   return this.carService.findByBrand(brand);
+  // @Get('/brand/:brand')
+  // findByBrand(@Param('brand') brand: string): Promise<Car[]> {
+  //  return this.carService.findByBrand(brand);
+  // }
+  @Delete(':id')
+  async deleteCar(@Param('id') id: string): Promise<void> {
+    const numId = Number(id);
+    if (Number.isNaN(numId)) throw new BadRequestException('Invalid id');
+    await this.carService.deleteCar(numId);
+  }
+  @Post('/add')
+  async addCar(@Body() data: Car): Promise<string> {
+    if (!data || !data.brand || !data.model || !data.price) {
+      throw new BadRequestException('Missing data, please make sure u enter all data');
+    }
+    this.carService.createCar(data);
+    return `Dodano Samochód ${data.brand} ${data.model} w cenie ${data.price}`
+  }
+  @Patch(':id')
+  async updateCarDetails(@Param('id') id: number,@Body() carData: Partial<Car>,): Promise<object> {
+    if (Number.isNaN(id)) throw new BadRequestException('Invalid id');
+    const updated = await this.carService.updateCar(id, carData);
+    return updated;
+  }
+  //Search Cars
+  @Post('/search')
+  async searchCars(@Body() carData: Car): Promise<object | string>{
+    return this.carService.searchCars(carData);
   }
 }

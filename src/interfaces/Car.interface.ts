@@ -2,5 +2,5 @@ export interface Car {
   id?: number;
   brand: string;
   model: string;
-  price: number | null;
+  price?: number;
 }

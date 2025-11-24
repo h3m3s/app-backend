@@ -13,5 +13,5 @@ export class Cars {
   model: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  price: string | null;
+  price: number;
 }
