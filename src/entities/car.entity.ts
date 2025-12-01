@@ -14,4 +14,7 @@ export class Cars {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   price: number;
+  
+  @Column()
+  photo: string;
 }

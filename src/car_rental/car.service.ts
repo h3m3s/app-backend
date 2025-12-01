@@ -46,21 +46,37 @@ export class CarService {
     return await this.carRespository.save(data);
   }
   async updateCar(id: number, carData: Partial<Car>): Promise<Car> {
-    const existing = await this.carRespository.findOne({ where: { id } });
-    if (!existing) {
-      throw new NotFoundException(`Car with ID ${id} not found`);
-    }
+  const existing = await this.carRespository.findOne({ where: { id } });
 
-    // Merge provided fields
-    if (typeof carData.brand === 'string') existing.brand = carData.brand;
-    if (typeof carData.model === 'string') existing.model = carData.model;
-    if (typeof carData.price === 'number' || carData.price === null)
-      (existing as any).price = carData.price as any;
-
-    return await this.carRespository.save(existing);
-
-   
+  if (!existing) {
+    throw new NotFoundException(`Car with ID ${id} not found`);
   }
+
+  // Brand
+  if (typeof carData.brand === 'string' && carData.brand.trim() !== '') {
+    existing.brand = carData.brand.trim();
+  }
+
+  // Model
+  if (typeof carData.model === 'string' && carData.model.trim() !== '') {
+    existing.model = carData.model.trim();
+  }
+
+  // Price (frontend wysyła string)
+  if (carData.price !== undefined && carData.price !== null) {
+    const parsed = Number(carData.price);
+    if (!isNaN(parsed)) {
+      existing.price = parsed;
+    }
+  }
+
+  // Photo — tutaj backend przyjmuje tylko nazwę pliku!
+  if (typeof carData.photo === 'string' && carData.photo.trim() !== '') {
+    existing.photo = carData.photo.trim();
+  }
+
+  return await this.carRespository.save(existing);
+}
   
   
 }

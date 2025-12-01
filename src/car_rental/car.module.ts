@@ -7,7 +7,7 @@ import { CarService } from './car.service';
   imports: [
     TypeOrmModule.forFeature([Cars])
   ],
-  exports:[TypeOrmModule],
+  exports:[TypeOrmModule, CarService],
   controllers: [CarController],
   providers: [CarService],
 })

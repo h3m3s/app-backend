@@ -3,10 +3,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CarModule } from './car_rental/car.module';
+import { UploadModule } from './upload/upload.module';
 @Module({
 
   imports: [
     CarModule,
+    UploadModule,
     TypeOrmModule.forRoot({
       type: 'mysql', 
       host: 'localhost',
