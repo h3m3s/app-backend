@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Rent } from './rent.entity';
 
 // Map this entity to the existing `cars` table in your database
 @Entity('cars')
@@ -17,4 +18,7 @@ export class Cars {
   
   @Column()
   photo: string;
+
+  @OneToMany(() => Rent, (rent) => rent.car)
+  rentals: Rent[];
 }

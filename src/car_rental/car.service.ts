@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, ILike, Repository,  Between, MoreThanOrEqual, LessThanOrEqual} from 'typeorm';
+import { Between, FindOptionsWhere, In, LessThan, LessThanOrEqual, Like, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { Cars } from 'src/entities/car.entity';
+import { Rent } from 'src/entities/rent.entity';
 import type { Car } from 'src/interfaces/Car.interface';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class CarService {
   constructor(
     @InjectRepository(Cars)
     private carRespository: Repository<Cars>,
+    @InjectRepository(Rent)
+    private rentRepository: Repository<Rent>,
   ) {}
 
   findAll(): Promise<Car[]> {
@@ -19,18 +22,82 @@ export class CarService {
     return this.carRespository.findOne({ where: { id } });
   }
   async searchCars(carData: Partial<Car>): Promise<Car[] | string> {
+    const brand = this.normalizeString(carData.brand);
+    const model = this.normalizeString(carData.model);
+    const minPrice = this.normalizeNumber(carData.minPrice);
+    const maxPrice = this.normalizeNumber(carData.maxPrice);
+    const startDate = this.normalizeDateInput(carData.startDate);
+    const endDate = this.normalizeDateInput(carData.endDate);
+
+    // Debug logs removed
+
     const where: FindOptionsWhere<Cars> = {};
 
-    if (carData.brand) where.brand = ILike(`%${carData.brand}%`);
-    if (carData.model) where.model = ILike(`%${carData.model}%`);
-    carData.minPrice ? (where.price = MoreThanOrEqual(carData.minPrice)) : null;
-    carData.maxPrice ? (where.price = LessThanOrEqual(carData.maxPrice)) : null;
-    if (carData.minPrice && carData.maxPrice) {
-      where.price = Between(carData.minPrice, carData.maxPrice);
+    if (brand) {
+      where.brand = Like(`%${brand}%`);
     }
 
-    const cars = await this.carRespository.find({ where });
-    return cars.length ? cars : 'Brak wyników';
+    if (model) {
+      where.model = Like(`%${model}%`);
+    }
+
+    if (typeof minPrice === 'number' && typeof maxPrice === 'number') {
+      where.price = Between(minPrice, maxPrice);
+    } else if (typeof minPrice === 'number') {
+      where.price = MoreThanOrEqual(minPrice);
+    } else if (typeof maxPrice === 'number') {
+      where.price = LessThanOrEqual(maxPrice);
+    }
+
+    const cars = await this.carRespository.find({
+      where,
+      order: { brand: 'ASC', model: 'ASC' },
+    });
+
+    if (!cars.length) {
+      return 'Brak wyników';
+    }
+
+    let filtered = cars;
+    if (startDate && endDate) {
+      // Backend validation: reject invalid ranges
+      if (startDate.getTime() > endDate.getTime()) {
+        throw new Error('Invalid date range: startDate must be before or equal to endDate');
+      }
+      const [from, to] = [startDate, endDate];
+      const carIds = cars.map((car) => car.id).filter((id): id is number => typeof id === 'number');
+
+      // Availability window computed
+
+      if (carIds.length) {
+        const overlapping = await this.rentRepository.find({
+          where: {
+            car: { id: In(carIds) },
+            startDate: LessThan(to),
+            endDate: MoreThan(from),
+          },
+        });
+
+        // Overlapping rentals fetched
+
+        // Use relationId accessor (carId) to avoid relying on optional relation load
+        const busyIds = new Set(
+          overlapping
+            .map((rent) => (rent as any).carId ?? rent.car?.id)
+            .filter((id): id is number => typeof id === 'number')
+        );
+
+        // Busy IDs identified
+        
+        // Mark reserved cars instead of filtering them out
+        filtered = cars.map((car) => ({
+          ...car,
+          isReserved: busyIds.has(car.id),
+        }));
+      }
+    }
+
+    return filtered.length ? filtered : 'Brak wyników';
   }
   findByBrand(brand: string): Promise<Car[]> {
     return this.carRespository.find({ where: { brand } });
@@ -77,6 +144,41 @@ export class CarService {
 
   return await this.carRespository.save(existing);
 }
+
+  private normalizeString(value: unknown): string | undefined {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : undefined;
+  }
+
+  private normalizeNumber(value: unknown): number | undefined {
+    if (value === null || value === undefined) return undefined;
+    if (typeof value === 'number' && !Number.isNaN(value)) return value;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed.length) return undefined;
+      const parsed = Number(trimmed.replace(',', '.'));
+      return Number.isNaN(parsed) ? undefined : parsed;
+    }
+    return undefined;
+  }
+
+  private normalizeDateInput(value: unknown): Date | undefined {
+    if (value === null || value === undefined) {
+      return undefined;
+    }
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed.length) return undefined;
+      const parsed = new Date(trimmed);
+      // Date normalized
+      return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+    }
+    return undefined;
+  }
   
   
 }

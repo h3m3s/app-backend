@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Delete, BadRequestException, Post, Body, Put, Patch, Search } from '@nestjs/common';
+import { Controller, Get, Param, Delete, BadRequestException, Post, Body, Patch, Query } from '@nestjs/common';
 import { CarService } from './car.service';
 import type { Car } from 'src/interfaces/Car.interface';
 
@@ -40,8 +40,13 @@ export class CarController {
     return updated;
   }
   //Search Cars
+  @Get('/search')
+  async searchCarsQuery(@Query() query: Partial<Car>): Promise<object | string> {
+    return this.carService.searchCars(query);
+  }
+
   @Post('/search')
-  async searchCars(@Body() carData: Car): Promise<object | string>{
+  async searchCars(@Body() carData: Partial<Car>): Promise<object | string>{
     return this.carService.searchCars(carData);
   }
 }
