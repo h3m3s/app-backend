@@ -1,5 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from 'typeorm';
 import { Cars } from './car.entity';
+import { user } from './user.entity';
 
 @Entity('rent')
 export class Rent {
@@ -18,4 +19,11 @@ export class Rent {
 
   @Column({ name: 'end_date', type: 'timestamp' })
   endDate: Date;
+
+  @ManyToOne(() => user, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'user_id' })
+  user: user | null;
+
+  @RelationId((rent: Rent) => rent.user)
+  userId: number | null;
 }

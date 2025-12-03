@@ -10,6 +10,7 @@ interface RentPayload {
   endDate?: string | Date;
   start_date?: string | Date;
   end_date?: string | Date;
+  userId?: number;
 }
 
 @Injectable()
@@ -26,29 +27,46 @@ export class RentService {
     const endDate = this.requireDate(payload, 'endDate');
     this.validateDateOrder(startDate, endDate);
 
-    const rent = this.rentRepository.create({
+    const rentData: any = {
       car: { id: carId } as Cars,
       startDate,
       endDate,
-    });
+    };
 
-    return this.rentRepository.save(rent);
+    if (payload.userId) {
+      rentData.user = { id: payload.userId };
+    }
+
+    // Check for overlapping rents for the same car
+    const overlapping = await this.rentRepository.createQueryBuilder('rent')
+      .where('rent.car_id = :carId', { carId })
+      .andWhere('NOT (rent.end_date <= :start OR rent.start_date >= :end)', { start: startDate, end: endDate })
+      .getMany();
+
+    if (overlapping.length) {
+      throw new BadRequestException('Requested rental overlaps with existing bookings');
+    }
+
+    const rent = this.rentRepository.create(rentData);
+    const saved = await this.rentRepository.save(rent);
+    return saved as unknown as Rent;
   }
 
   findAll(): Promise<Rent[]> {
-    return this.rentRepository.find({ order: { startDate: 'ASC' } });
+    return this.rentRepository.find({ relations: ['car', 'user'], order: { startDate: 'ASC' } });
   }
 
   async findByCar(carId: number): Promise<Rent[]> {
     await this.ensureCarExists(carId);
     return this.rentRepository.find({
       where: { car: { id: carId } },
+      relations: ['user'],
       order: { startDate: 'ASC' },
     });
   }
 
   async findOne(id: number): Promise<Rent> {
-    const rent = await this.rentRepository.findOne({ where: { id } });
+    const rent = await this.rentRepository.findOne({ where: { id }, relations: ['car', 'user'] });
     if (!rent) throw new NotFoundException(`Rent entry with ID ${id} not found`);
     return rent;
   }
@@ -68,6 +86,16 @@ export class RentService {
 
     if (startDate) rent.startDate = startDate;
     if (endDate) rent.endDate = endDate;
+
+    // Check for overlapping rents (exclude current rent id)
+    const overlapping = await this.rentRepository.createQueryBuilder('rent')
+      .where('rent.car_id = :carId', { carId: rent.carId })
+      .andWhere('rent.id != :id', { id })
+      .andWhere('NOT (rent.end_date <= :start OR rent.start_date >= :end)', { start: nextStart, end: nextEnd })
+      .getMany();
+    if (overlapping.length) {
+      throw new BadRequestException('Updated rental would overlap existing bookings');
+    }
 
     return this.rentRepository.save(rent);
   }
