@@ -2,17 +2,24 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Cars } from 'src/entities/car.entity';
 import { AuthController } from './auth.controller';
-import { LoginService } from './auth.service';
+import { AuthService } from './auth.service';
 import { Rent } from 'src/entities/rent.entity';
 import { user } from 'src/entities/user.entity';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './jwt.strategy';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Cars, Rent, user])
+    PassportModule,
+    JwtModule.register({
+      secret: 'tebik',
+      signOptions: {expiresIn: '1h'}
+    })
   ],
-  exports:[TypeOrmModule, LoginService],
+  exports: [AuthService],
   controllers: [AuthController],
-  providers: [LoginService],
+  providers: [AuthService, JwtStrategy],
 })
-export class LoginModule {
+export class AuthModule {
   
 }

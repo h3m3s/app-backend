@@ -5,12 +5,20 @@ import { Cars } from './car.entity';
 export class user {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
   @Column({ name: 'user' })
   username: string;
 
   @Column()
   email: string;
+
+  @Column()
+  firstName: string;
+
+  @Column()
+    lastName: string;
+
+  @Column()
+    phone: number;
 
   @Column()
   password: string;
