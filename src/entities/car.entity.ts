@@ -1,7 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Rent } from './rent.entity';
-
-// Map this entity to the existing `cars` table in your database
 @Entity('cars')
 export class Cars {
   @PrimaryGeneratedColumn()

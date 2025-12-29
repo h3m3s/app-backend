@@ -1,8 +1,10 @@
-import { Controller, Get, Param, Delete, BadRequestException, Post, Body, Patch, Query } from '@nestjs/common';
+import { Controller, Get, Param, Delete, BadRequestException, Post, Body, Patch, Query, UseGuards } from '@nestjs/common';
 import { CarService } from './car.service';
 import type { Car } from 'src/interfaces/Car.interface';
+import { JwtGuard } from 'src/@auth/jwt.guard.';
 
 @Controller('car')
+@UseGuards(JwtGuard)
 export class CarController {
   constructor(private readonly carService: CarService) {}
 
@@ -15,16 +17,14 @@ export class CarController {
   findCarById(@Param('id') id: number): Promise<Car | null> {
    return this.carService.findCarById(id);
   }
-  // @Get('/brand/:brand')
-  // findByBrand(@Param('brand') brand: string): Promise<Car[]> {
-  //  return this.carService.findByBrand(brand);
-  // }
+  @UseGuards(JwtGuard)
   @Delete(':id')
   async deleteCar(@Param('id') id: string): Promise<void> {
     const numId = Number(id);
     if (Number.isNaN(numId)) throw new BadRequestException('Invalid id');
     await this.carService.deleteCar(numId);
   }
+  @UseGuards(JwtGuard)
   @Post('/add')
   async addCar(@Body() data: Car): Promise<string> {
     if (!data || !data.brand || !data.model || !data.price) {
@@ -33,6 +33,7 @@ export class CarController {
     this.carService.createCar(data);
     return `Dodano Samochód ${data.brand} ${data.model} w cenie ${data.price}`
   }
+  @UseGuards(JwtGuard)
   @Patch(':id')
   async updateCarDetails(@Param('id') id: number,@Body() carData: Partial<Car>,): Promise<object> {
     if (Number.isNaN(id)) throw new BadRequestException('Invalid id');

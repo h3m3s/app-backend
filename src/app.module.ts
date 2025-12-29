@@ -2,15 +2,16 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CarModule } from './car_rental/car.module';
-import { AuthModule } from './auth/auth.module';
-import { UploadModule } from './upload/upload.module';
-import { RentModule } from './rent/rent.module';
-import { AuthService } from './auth/auth.service';
-import { UserModule } from './user/user.module';
+import { ConfigModule } from '@nestjs/config';
+import { CarModule } from './@car_rental/car.module';
+import { AuthModule } from './@auth/auth.module';
+import { UploadModule } from './@upload/upload.module';
+import { RentModule } from './@rent/rent.module';
+import { UserModule } from './@user/user.module';
 @Module({
 
   imports: [
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env', 'src/.env'] }),
     CarModule,
     AuthModule,
     UploadModule,
@@ -28,6 +29,6 @@ import { UserModule } from './user/user.module';
     UserModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AuthService],
+  providers: [AppService],
 })
 export class AppModule {}

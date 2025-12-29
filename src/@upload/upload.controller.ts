@@ -5,13 +5,15 @@ import {
   UseInterceptors,
   Param,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerOptions } from './multer.config';
 import { UploadService } from './upload.service';
-import { CarService } from 'src/car_rental/car.service';
+import { CarService } from 'src/@car_rental/car.service';
 import type { MulterFile } from 'src/interfaces/Multerfile.interface';
-
+import { JwtGuard } from 'src/@auth/jwt.guard.';
+@UseGuards(JwtGuard)
 @Controller('upload')
 export class UploadController {
   constructor(

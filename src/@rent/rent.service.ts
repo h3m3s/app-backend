@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Rent } from 'src/entities/rent.entity';
-import { CarService } from 'src/car_rental/car.service';
+import { CarService } from 'src/@car_rental/car.service';
 import { Cars } from 'src/entities/car.entity';
 
 interface RentPayload {

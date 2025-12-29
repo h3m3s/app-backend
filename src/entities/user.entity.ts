@@ -1,11 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from 'typeorm';
-import { Cars } from './car.entity';
+import { Column, Entity, PrimaryGeneratedColumn} from 'typeorm';
 
 @Entity('users')
 export class user {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column({ name: 'user' })
+  @Column()
   username: string;
 
   @Column()
